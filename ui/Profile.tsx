@@ -1,111 +1,197 @@
-import React from "react";
-import { View, Text, StyleSheet, Dimensions, ScrollView, ImageBackground } from "react-native";
-import { useNavigation } from '@react-navigation/native';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  ScrollView,
+  ImageBackground,
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Avatar } from "react-native-paper";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Button, BottomSheet } from "react-native-elements";
-import RNFetchBlob from 'rn-fetch-blob';
-import DocumentPicker from 'react-native-document-picker';
-import firebase from '@react-native-firebase/app';
-import firestore from '@react-native-firebase/firestore';
-import ImageResizer from 'react-native-image-resizer';
-
+import RNFetchBlob from "rn-fetch-blob";
+import DocumentPicker from "react-native-document-picker";
+import firebase from "@react-native-firebase/app";
+import firestore from "@react-native-firebase/firestore";
+import ImageResizer from "react-native-image-resizer";
+import { Image } from "native-base";
 
 const Profile = () => {
   const Navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const { width, height } = Dimensions.get('window');
-  const [isVisible, setIsVisible] = React.useState(false);
+  const { width, height } = Dimensions.get("window");
+  const [isVisible, setIsVisible] = useState(false);
+  const [images, setImages] = useState<string[]>([]);
+  const db = firebase.firestore();
 
+  useEffect(() => {
+    const fetchImages = async () => {
+      const currentUser = firebase.auth().currentUser;
+      if (currentUser) {
+        const snapshot = await db
+          .collection("users")
+          .doc(currentUser.uid)
+          .collection("posts")
+          .get();
+        const test: string[] = [];
+        snapshot.forEach((doc) => {
+          test.push(doc.data().result);
+        });
+        console.log(test.length);
+        setImages(test);
+      } else {
+        console.log("User not logged in.");
+      }
+    };
 
-  async function post() {
+    fetchImages();
+  }, [db]);
+
+  const post = async () => {
     try {
       const file = await DocumentPicker.pickSingle({
         type: [DocumentPicker.types.images],
       });
-  
+
       const path = file.uri;
-  
+
       // Resize the image to a desired width and height
-      const resizedImage = await ImageResizer.createResizedImage(path, 800, 600, 'JPEG', 80);
-  
+      const resizedImage = await ImageResizer.createResizedImage(
+        path,
+        800,
+        600,
+        "JPEG",
+        80
+      );
+
       const resizedImagePath = resizedImage.uri;
-  
-      const result = await RNFetchBlob.fs.readFile(resizedImagePath, 'base64');
-  
+
+      const result = await RNFetchBlob.fs.readFile(resizedImagePath, "base64");
+
       const currentUser = firebase.auth().currentUser;
       if (currentUser) {
-        await firestore().collection('users')
+        await firestore()
+          .collection("users")
           .doc(currentUser.uid)
-          .collection('posts').add({
-            result
+          .collection("posts")
+          .add({
+            result,
           });
+        setImages(prevImages => [...prevImages, result]);
       } else {
-        console.log('User not logged in.');
+        console.log("User not logged in.");
       }
     } catch (err) {
       if (DocumentPicker.isCancel(err)) {
-        console.log('Document picking cancelled.');
+        console.log("Document picking cancelled.");
       } else {
-        console.log('Error:', err);
+        console.log("Error:", err);
       }
     }
-  }
-  
+  };
+
   const openMenuScreen = () => {
     setIsVisible(true);
-  }
+  };
+
+  const renderSection = () => {
+    return images.map((image, index) => {
+      if (image !== "") {
+        return (
+          <View
+            key={index}
+            style={[
+              { width: width / 3.18 },
+              { height: width / 3.18 },
+              index % 3 !== 0 ? { paddingLeft: 2 } : { paddingLeft: 0 },
+              index === 3 ? { borderTopEndRadius: 10 } : { borderTopLeftRadius: 0 },
+            ]}
+          >
+            <Image
+              style={{ flex: 1, width: undefined, height: undefined }}
+              source={{ uri: "data:image/jpg;base64," + image }}
+              alt="postImg"
+            />
+          </View>
+        );
+      }
+    });
+  };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#111' }}>
+    <View style={{ flex: 1, backgroundColor: "#111" }}>
       <View style={{ flex: 1 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <View style={{ flexDirection: 'row', marginTop: 20, marginBottom: 20, marginLeft: 10, width: width - 75 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              marginTop: 20,
+              marginBottom: 20,
+              marginLeft: 10,
+              width: width - 75,
+            }}
+          >
             <Avatar.Image
-              style={{ backgroundColor: 'grey' }}
+              style={{ backgroundColor: "grey" }}
               size={100}
               source={{
-                uri: 'https://c4.wallpaperflare.com/wallpaper/143/213/145/uchiha-madara-wallpaper-preview.jpg'
+                uri: "https://c4.wallpaperflare.com/wallpaper/143/213/145/uchiha-madara-wallpaper-preview.jpg",
               }}
             />
-            <View style={{ flexDirection: 'column' }}>
-              <Text style={{
-                color: 'silver',
-                marginLeft: 15,
-                marginTop: 7,
-                fontSize: 20,
-                fontWeight: '400'
-              }}>Vikranth Venkateswar</Text>
-              <View style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                marginTop: 15
-              }}>
-                <View style={{ flexDirection: 'column', alignItems: 'center', marginLeft: 14 }}>
-                  <Text style={{ color: 'silver' }}>25</Text>
-                  <Text style={{ color: 'silver' }}>POST</Text>
+            <View style={{ flexDirection: "column" }}>
+              <Text
+                style={{
+                  color: "silver",
+                  marginLeft: 15,
+                  marginTop: 7,
+                  fontSize: 20,
+                  fontWeight: "400",
+                }}
+              >
+                Vikranth Venkateswar
+              </Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  marginTop: 15,
+                }}
+              >
+                <View style={{ flexDirection: "column", alignItems: "center", marginLeft: 14 }}>
+                  <Text style={{ color: "silver" }}>25</Text>
+                  <Text style={{ color: "silver" }}>POST</Text>
                 </View>
-                <View style={{ flexDirection: 'column', alignItems: 'center', marginLeft: 20 }}>
-                  <Text style={{ color: 'silver' }}>25</Text>
-                  <Text style={{ color: 'silver' }}>FOLLOWERS</Text>
+                <View style={{ flexDirection: "column", alignItems: "center", marginLeft: 20 }}>
+                  <Text style={{ color: "silver" }}>25</Text>
+                  <Text style={{ color: "silver" }}>FOLLOWERS</Text>
                 </View>
-                <View style={{ flexDirection: 'column', alignItems: 'center', marginLeft: 20 }}>
-                  <Text style={{ color: 'silver' }}>25</Text>
-                  <Text style={{ color: 'silver' }}>FOLLOWING</Text>
+                <View style={{ flexDirection: "column", alignItems: "center", marginLeft: 20 }}>
+                  <Text style={{ color: "silver" }}>25</Text>
+                  <Text style={{ color: "silver" }}>FOLLOWING</Text>
                 </View>
               </View>
             </View>
           </View>
-          <View style={{ flexDirection: 'row' }}>
-            <Icon name='add-circle-outline'
+          <View style={{ flexDirection: "row" }}>
+            <Icon
+              name="add-circle-outline"
               size={30}
-              color={'white'}
+              color={"white"}
               style={{ marginRight: 5, marginTop: -45 }}
               onPress={post}
             />
-            <Icon name='people-circle'
+            <Icon
+              name="people-circle"
               size={30}
-              color={'white'}
+              color={"white"}
               style={{ marginTop: -45 }}
               onPress={openMenuScreen}
             />
@@ -114,42 +200,41 @@ const Profile = () => {
         <ScrollView horizontal>
           <View>
             <ImageBackground
-              source={require('../Assets/Coorg.jpg')}
+              source={require("../Assets/Coorg.jpg")}
               style={styles.box}
-            >
-            </ImageBackground>
+            ></ImageBackground>
           </View>
           <View>
             <ImageBackground
-              source={require('../Assets/Vagamon.jpg')}
+              source={require("../Assets/Vagamon.jpg")}
               style={styles.box}
-            >
-            </ImageBackground>
+            ></ImageBackground>
           </View>
           <View style={{ marginRight: 15 }}>
             <ImageBackground
-              source={require('../Assets/Munnar.jpg')}
+              source={require("../Assets/Munnar.jpg")}
               style={styles.box}
-            >
-            </ImageBackground>
+            ></ImageBackground>
           </View>
         </ScrollView>
       </View>
       <View style={{ flex: 1.5 }}>
-        <View style={{
-          width: Dimensions.get('window').width - 30,
-          height: 50,
-          backgroundColor: '#1e1e1e',
-          marginLeft: 15,
-          marginBottom: 15,
-          justifyContent: 'center',
-          alignItems: 'center'
-        }}>
-          <Text style={{ color: 'silver', fontWeight: '900' }}>POSTS</Text>
+        <View
+          style={{
+            width: Dimensions.get("window").width - 30,
+            height: 50,
+            backgroundColor: "#1e1e1e",
+            marginLeft: 15,
+            marginBottom: 15,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Text style={{ color: "silver", fontWeight: "900" }}>POSTS</Text>
         </View>
         <ScrollView>
-          <View style={{ flexDirection: 'row' }}>
-
+          <View style={{ flexDirection: "row", flexWrap: "wrap", width:(width-23), marginLeft:11.5}}>
+            {renderSection()}
           </View>
         </ScrollView>
       </View>
@@ -160,11 +245,11 @@ const Profile = () => {
 const styles = StyleSheet.create({
   box: {
     flex: 1,
-    width: Dimensions.get('window').width - 30,
-    height: Dimensions.get('window').width / 2.3,
+    width: Dimensions.get("window").width - 30,
+    height: Dimensions.get("window").width / 2.3,
     marginLeft: 15,
-    borderRadius: 20
-  }
+    borderRadius: 20,
+  },
 });
 
 export default Profile;
