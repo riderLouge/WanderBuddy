@@ -2,3 +2,14 @@ rootProject.name = 'WanderBuddy'
 apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesSettingsGradle(settings)
 include ':app'
 includeBuild('../node_modules/react-native-gradle-plugin')
+dependencyResolutionManagement {  
+//   repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)  
+  repositories {  
+        google()  
+        mavenCentral()  
+        maven {  
+            url 'https://maven.mappls.com/repository/mappls/'  
+        }  
+    }  
+   }   
+

@@ -163,6 +163,8 @@ dependencies {
 
     implementation project(':react-native-image-resizer')
 
+    implementation 'com.mappls.sdk:mappls-android-sdk:8.0.0'
+
     debugImplementation("com.facebook.flipper:flipper:${FLIPPER_VERSION}")
     debugImplementation("com.facebook.flipper:flipper-network-plugin:${FLIPPER_VERSION}") {
         exclude group:'com.squareup.okhttp3', module:'okhttp'

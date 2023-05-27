@@ -1,36 +1,56 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, Dimensions, StyleSheet, ScrollView } from "react-native";
 import Icon from 'react-native-vector-icons/Ionicons';
 import Icon1 from 'react-native-vector-icons/Entypo';
 import Icon2 from 'react-native-vector-icons/Fontisto';
 import { useNavigation } from '@react-navigation/native';
 import { firebase } from "@react-native-firebase/firestore";
-import { Avatar } from "react-native-paper";
-import { Button } from "react-native-elements";
+import { Avatar, Button } from "react-native-elements";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 var { width, height } = Dimensions.get('window');
 
 export default function Settings() {
-  const Navigation = useNavigation();
+  const Navigation = useNavigation<NativeStackNavigationProp<any>>();
+  const db = firebase.firestore();
+  const uid = firebase.auth().currentUser?.uid;
+  const [Pic, setPic] = useState('');
+  const [FirstName, setFirstName] = useState('');
+  const [LastName, setLastName] = useState('');
+
+  useEffect(() => {
+    db.collection('users')
+      .doc(uid)
+      .collection('Profile')
+      .get()
+      .then((snapshot) => {
+        snapshot.forEach((doc) => {
+          renderData(doc);
+        });
+      });
+  }, [db, uid]);
+
+  function renderData(doc: any) {
+    setPic(doc.data().ProfilePic);
+    setFirstName(doc.data().FirstName);
+    setLastName(doc.data().LastName);  }
 
   return (
     <View style={styles.container}>
       <ScrollView>
         <View style={styles.header}>
           <Text style={styles.title}>Settings</Text>
-          <Avatar.Image
-            style={styles.avatar}
-            size={100}
-            source={{
-              uri: 'https://c4.wallpaperflare.com/wallpaper/143/213/145/uchiha-madara-wallpaper-preview.jpg'
-            }}
-          />
-          <Text style={styles.username}>Vikranth Venkateswar</Text>
+          <Avatar
+              size={width / 3}
+              source={{ uri: 'data:image/jpg;base64,' + Pic }}
+              overlayContainerStyle={styles.profileImage}
+            />
+          <Text style={styles.username}>{FirstName}  {LastName}</Text>
           <Button
             title="Edit Profile"
             type="solid"
             buttonStyle={styles.editProfileButton}
-            // onPress={}
+            onPress={() => Navigation.push('EditProfile')}
           />
         </View>
         <View style={styles.optionsContainer}>
@@ -82,6 +102,14 @@ const styles = StyleSheet.create({
   avatar: {
     backgroundColor: 'grey',
     marginTop: 20,
+  },
+  profileImage: {
+    backgroundColor: 'grey',
+    marginLeft: '1.5%',
+    marginTop: '2%',
+    borderWidth: 1,
+    borderColor: 'white',
+    borderRadius: width / 6,
   },
   username: {
     fontSize: 20,

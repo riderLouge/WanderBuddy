@@ -9,9 +9,8 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Avatar } from "react-native-paper";
 import Icon from "react-native-vector-icons/Ionicons";
-import { Button, BottomSheet } from "react-native-elements";
+import { Avatar, Button, BottomSheet } from "react-native-elements";
 import RNFetchBlob from "rn-fetch-blob";
 import DocumentPicker from "react-native-document-picker";
 import firebase from "@react-native-firebase/app";
@@ -19,12 +18,17 @@ import firestore from "@react-native-firebase/firestore";
 import ImageResizer from "react-native-image-resizer";
 import { Image } from "native-base";
 
+const { width, height } = Dimensions.get("window");
+
+
 const Profile = () => {
   const Navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const { width, height } = Dimensions.get("window");
-  const [isVisible, setIsVisible] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const db = firebase.firestore();
+  const uid = firebase.auth().currentUser?.uid;
+  const [Pic, setPic] = useState('');
+  const [ProfileName, setProfileName] = useState('');
+
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -46,8 +50,26 @@ const Profile = () => {
       }
     };
 
+
     fetchImages();
   }, [db]);
+
+  useEffect(() => {
+    db.collection('users')
+      .doc(uid)
+      .collection('Profile')
+      .get()
+      .then((snapshot) => {
+        snapshot.forEach((doc) => {
+          renderData(doc);
+        });
+      });
+  }, [db, uid]);
+
+  function renderData(doc: any) {
+    setPic(doc.data().ProfilePic);
+    setProfileName(doc.data().ProfileName);
+  }
 
   const post = async () => {
     try {
@@ -92,9 +114,6 @@ const Profile = () => {
     }
   };
 
-  const openMenuScreen = () => {
-    setIsVisible(true);
-  };
 
   const renderSection = () => {
     return images.map((image, index) => {
@@ -110,7 +129,7 @@ const Profile = () => {
             ]}
           >
             <Image
-              style={{ flex: 1, width: undefined, height: undefined }}
+              style={{ flex: 1, width: undefined, height: undefined, marginTop:2 }}
               source={{ uri: "data:image/jpg;base64," + image }}
               alt="postImg"
             />
@@ -139,12 +158,10 @@ const Profile = () => {
               width: width - 75,
             }}
           >
-            <Avatar.Image
-              style={{ backgroundColor: "grey" }}
-              size={100}
-              source={{
-                uri: "https://c4.wallpaperflare.com/wallpaper/143/213/145/uchiha-madara-wallpaper-preview.jpg",
-              }}
+            <Avatar
+              size={width /4}
+              source={{ uri: 'data:image/jpg;base64,' + Pic }}
+              overlayContainerStyle={styles.profileImage}
             />
             <View style={{ flexDirection: "column" }}>
               <Text
@@ -156,7 +173,7 @@ const Profile = () => {
                   fontWeight: "400",
                 }}
               >
-                Vikranth Venkateswar
+                {ProfileName}
               </Text>
               <View
                 style={{
@@ -166,7 +183,7 @@ const Profile = () => {
                 }}
               >
                 <View style={{ flexDirection: "column", alignItems: "center", marginLeft: 14 }}>
-                  <Text style={{ color: "silver" }}>25</Text>
+                  <Text style={{ color: "silver" }}>{images.length}</Text>
                   <Text style={{ color: "silver" }}>POST</Text>
                 </View>
                 <View style={{ flexDirection: "column", alignItems: "center", marginLeft: 20 }}>
@@ -193,7 +210,7 @@ const Profile = () => {
               size={30}
               color={"white"}
               style={{ marginTop: -45 }}
-              onPress={openMenuScreen}
+              onPress={()=> Navigation.push('SearchUser')}
             />
           </View>
         </View>
@@ -249,6 +266,14 @@ const styles = StyleSheet.create({
     height: Dimensions.get("window").width / 2.3,
     marginLeft: 15,
     borderRadius: 20,
+  },
+  profileImage: {
+    backgroundColor: 'grey',
+    marginLeft: '1.5%',
+    marginTop: '2%',
+    borderWidth: 1,
+    borderColor: 'grey',
+    borderRadius: (width / 8),
   },
 });
 
