@@ -23,6 +23,8 @@ import { firebase } from '@react-native-firebase/auth';
 import Challanges from './ui/Challanges';
 import Home from './ui/Home';
 import Trip from './ui/Trip';
+import EditProfile from './ui/EditProfile';
+import SearchUser from './ui/SearchUser';
 
 
 const App = () => {
@@ -32,7 +34,7 @@ const App = () => {
   const [User,SetUser]=React.useState('');
   const [Initializing,SetInitializing]=React.useState(true);
 
-  function onAuthStateChange(User){
+  function onAuthStateChange(User : any){
     SetUser(User);
     if(Initializing) SetInitializing(false);
   }
@@ -51,7 +53,7 @@ const App = () => {
         screenOptions={({ route }) => ({
           tabBarStyle: { backgroundColor: 'black'},
                 tabBarIcon: ({ focused, color, size }) => {
-                  var iconName;
+                  var iconName = '';
     
                   if (route.name === 'Profile') {
                     iconName = focused ? 'person' : 'person-outline';
@@ -151,6 +153,10 @@ const App = () => {
         }}>
         <Stack.Screen name="Bottom" component={BottomTabScreen} />
         <Stack.Screen name="Map" component={Map} />
+        <Stack.Screen name="EditProfile" component={EditProfile} />
+        <Stack.Screen name="Profile" component={Profile} />
+        <Stack.Screen name="SearchUser" component={SearchUser} />
+
       </Stack.Navigator>
   );
 };
