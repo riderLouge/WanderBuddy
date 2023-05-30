@@ -120,16 +120,15 @@ const Map = ({ route }: { route: any }) => {
       (error) => {
         console.log(error.code, error.message);
       },
-      { enableHighAccuracy: true, distanceFilter: 10 } // Update every 10 meters
+      { enableHighAccuracy: true, distanceFilter: 1 }
     );
 
     return () => {
-      // Cleanup the watchPosition listener when component unmounts
       Geolocation.clearWatch(watchId);
     };
   };
 
-  
+
   const calculateDistance = (latitude: number, longitude: number) => {
     const earthRadius = 6371; // in kilometers
     const latDiff = ((destination.latitude - latitude) * Math.PI) / 180;
