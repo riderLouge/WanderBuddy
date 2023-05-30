@@ -25,6 +25,8 @@ import Home from './ui/Home';
 import Trip from './ui/Trip';
 import EditProfile from './ui/EditProfile';
 import SearchUser from './ui/SearchUser';
+import UserProfile from './ui/UserProfile';
+import EditQr from './ui/EditQr';
 
 
 const App = () => {
@@ -51,7 +53,7 @@ const App = () => {
         <Tab.Navigator initialRouteName="Profile" 
         
         screenOptions={({ route }) => ({
-          tabBarStyle: { backgroundColor: 'black'},
+          tabBarStyle: { backgroundColor: '#1a1c1a'},
                 tabBarIcon: ({ focused, color, size }) => {
                   var iconName = '';
     
@@ -70,8 +72,8 @@ const App = () => {
                   // You can return any component that you like here!
                   return <Icon name={iconName} size={size} color={color} />;
                 },
-                tabBarActiveTintColor: '#182747',
-                tabBarInactiveTintColor: 'gray',
+                tabBarActiveTintColor: 'silver',
+                tabBarInactiveTintColor: 'grey',
               })}
         >
           <Tab.Screen name="Profile" component={Profile}  options={{
@@ -156,6 +158,9 @@ const App = () => {
         <Stack.Screen name="EditProfile" component={EditProfile} />
         <Stack.Screen name="Profile" component={Profile} />
         <Stack.Screen name="SearchUser" component={SearchUser} />
+        <Stack.Screen name="UserProfile" component={UserProfile} />
+        <Stack.Screen name="Qr" component={Qr} />
+        <Stack.Screen name="EditQr" component={EditQr} />
 
       </Stack.Navigator>
   );

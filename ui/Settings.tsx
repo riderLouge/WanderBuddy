@@ -5,7 +5,8 @@ import Icon1 from 'react-native-vector-icons/Entypo';
 import Icon2 from 'react-native-vector-icons/Fontisto';
 import { useNavigation } from '@react-navigation/native';
 import { firebase } from "@react-native-firebase/firestore";
-import { Avatar, Button } from "react-native-elements";
+import { Avatar } from "react-native-paper";
+import { Button } from "react-native-elements";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 var { width, height } = Dimensions.get('window');
@@ -40,11 +41,13 @@ export default function Settings() {
       <ScrollView>
         <View style={styles.header}>
           <Text style={styles.title}>Settings</Text>
-          <Avatar
-              size={width / 3}
-              source={{ uri: 'data:image/jpg;base64,' + Pic }}
-              overlayContainerStyle={styles.profileImage}
-            />
+          <Avatar.Image
+            style={styles.avatar}
+            size={100}
+            source={{
+              uri: 'data:image/jpg;base64,' + Pic
+            }}
+          />
           <Text style={styles.username}>{FirstName}  {LastName}</Text>
           <Button
             title="Edit Profile"
@@ -56,7 +59,7 @@ export default function Settings() {
         <View style={styles.optionsContainer}>
           <View style={styles.option}>
             <Icon name="qr-code" size={26} color="white" style={styles.optionIcon} />
-            <Text style={styles.optionText}>QR</Text>
+            <Text style={styles.optionText} onPress={() => Navigation.push('Qr')}>Quick Response code</Text>
           </View>
           <View style={styles.option}>
             <Icon1 name="shop" size={26} color="white" style={styles.optionIcon} />
@@ -103,14 +106,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'grey',
     marginTop: 20,
   },
-  profileImage: {
-    backgroundColor: 'grey',
-    marginLeft: '1.5%',
-    marginTop: '2%',
-    borderWidth: 1,
-    borderColor: 'white',
-    borderRadius: width / 6,
-  },
   username: {
     fontSize: 20,
     marginTop: 20,
@@ -132,7 +127,7 @@ const styles = StyleSheet.create({
   option: {
     width: width - 30,
     height: 60,
-    backgroundColor: '#1f1e1e',
+    backgroundColor: 'silver',
     marginLeft: 15,
     borderRadius: 20,
     flexDirection: 'row',
@@ -142,9 +137,10 @@ const styles = StyleSheet.create({
   },
   optionIcon: {
     marginRight: 10,
+    color: 'black'
   },
   optionText: {
     fontSize: width / 23,
-    color: 'silver',
+    color: 'black',
   },
 });

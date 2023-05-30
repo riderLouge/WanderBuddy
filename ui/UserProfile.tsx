@@ -11,35 +11,32 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Avatar, Button, BottomSheet } from "react-native-elements";
-import RNFetchBlob from "rn-fetch-blob";
-import DocumentPicker from "react-native-document-picker";
 import firebase from "@react-native-firebase/app";
 import firestore from "@react-native-firebase/firestore";
-import ImageResizer from "react-native-image-resizer";
 import { Image } from "native-base";
 
 const { width, height } = Dimensions.get("window");
 
 
-const Profile = () => {
+const UserProfile = ({ route }: { route: any }) => {
   const Navigation = useNavigation<NativeStackNavigationProp<any>>();
   const [images, setImages] = useState<string[]>([]);
   const db = firebase.firestore();
-  const uid = firebase.auth().currentUser?.uid;
+  const { userId } = route.params;
   const [Pic, setPic] = useState('');
   const [ProfileName, setProfileName] = useState('');
+  const [buttonName,setButtonName] = useState('Follow');
   const [followers, setFollowers] = useState(0);
   const [following, setFollowing] = useState(0);
 
-
-
   useEffect(() => {
     const fetchImages = async () => {
-      const currentUser = firebase.auth().currentUser;
+      console.log(userId)
+      const currentUser = userId;
       if (currentUser) {
         const snapshot = await db
           .collection("users")
-          .doc(currentUser.uid)
+          .doc(userId)
           .collection("posts")
           .get();
         const test: string[] = [];
@@ -59,7 +56,7 @@ const Profile = () => {
 
   useEffect(() => {
     db.collection('users')
-      .doc(uid)
+      .doc(userId)
       .collection('Profile')
       .get()
       .then((snapshot) => {
@@ -67,71 +64,41 @@ const Profile = () => {
           renderData(doc);
         });
       });
+  }, [db, userId]);
+
+  useEffect(() => {
     db.collection('users')
-    .doc(uid)
-    .collection('Followers')
-    .get()
-    .then((snapshot)=> {
-      setFollowers(snapshot.size)
-    })
-    db.collection('users')
-    .doc(uid)    
-    .collection('Following')
-    .get()
-    .then((Followingsnapshot)=> {
-      setFollowing(Followingsnapshot.size)
-    })
-  }, [db, uid]);
+      .doc(userId)
+      .collection('Following')
+      .get()
+      .then((snapshot) => {
+        snapshot.forEach((doc) => {
+            if(doc.data().FollowingUserId === firebase.auth().currentUser?.uid){
+                setButtonName('UnFollow');
+
+            }
+        })
+      })
+      db.collection('users')
+      .doc(userId)
+      .collection('Followers')
+      .get()
+      .then((snapshot)=> {
+        setFollowers(snapshot.size)
+      })
+      db.collection('users')
+      .doc(userId)    
+      .collection('Following')
+      .get()
+      .then((Followingsnapshot)=> {
+        setFollowing(Followingsnapshot.size)
+      })
+  }, [buttonName])
 
   function renderData(doc: any) {
     setPic(doc.data().ProfilePic);
     setProfileName(doc.data().ProfileName);
   }
-
-  const post = async () => {
-    try {
-      const file = await DocumentPicker.pickSingle({
-        type: [DocumentPicker.types.images],
-      });
-
-      const path = file.uri;
-
-      // Resize the image to a desired width and height
-      const resizedImage = await ImageResizer.createResizedImage(
-        path,
-        800,
-        600,
-        "JPEG",
-        80
-      );
-
-
-      const resizedImagePath = resizedImage.uri;
-
-      const result = await RNFetchBlob.fs.readFile(resizedImagePath, "base64");
-
-      const currentUser = firebase.auth().currentUser;
-      if (currentUser) {
-        await firestore()
-          .collection("users")
-          .doc(currentUser.uid)
-          .collection("posts")
-          .add({
-            result,
-            UserId : firebase.auth().currentUser?.uid,
-          });
-        setImages(prevImages => [...prevImages, result]);
-      } else {
-        console.log("User not logged in.");
-      }
-    } catch (err) {
-      if (DocumentPicker.isCancel(err)) {
-        console.log("Document picking cancelled.");
-      } else {
-        console.log("Error:", err);
-      }
-    }
-  };
 
 
   const renderSection = () => {
@@ -158,9 +125,63 @@ const Profile = () => {
     });
   };
 
+  async function manageFollowers() {
+    if (buttonName === "Follow") {
+      await firebase.firestore()
+        .collection('users')
+        .doc(firebase.auth().currentUser?.uid)
+        .collection('Followers')
+        .add({
+          FollowerUserId: userId,
+        });
+  
+      await firebase.firestore()
+        .collection('users')
+        .doc(userId)
+        .collection('Following')
+        .add({
+          FollowingUserId: firebase.auth().currentUser?.uid,
+        });
+  
+      setButtonName("UnFollow");
+    } else if (buttonName === "UnFollow") {
+      const currentUser = firebase.auth().currentUser?.uid;
+      console.log("in delete")
+  
+      // Remove from current user's followers
+      await firebase.firestore()
+        .collection('users')
+        .doc(currentUser)
+        .collection('Followers')
+        .where('FollowerUserId', '==', userId)
+        .get()
+        .then((snapshot) => {
+          snapshot.forEach((doc) => {
+            doc.ref.delete();
+          });
+        });
+  
+      // Remove from other user's following
+      await firebase.firestore()
+        .collection('users')
+        .doc(userId)
+        .collection('Following')
+        .where('FollowingUserId', '==', currentUser)
+        .get()
+        .then((snapshot) => {
+          snapshot.forEach((doc) => {
+            doc.ref.delete();
+          });
+        });
+  
+      setButtonName("Follow");
+    }
+  }
+  
+
   return (
     <View style={{ flex: 1, backgroundColor: "#111" }}>
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1.3 }}>
         <View
           style={{
             flexDirection: "row",
@@ -216,7 +237,7 @@ const Profile = () => {
               </View>
             </View>
           </View>
-          <View style={{ flexDirection: "row" }}>
+          {/* <View style={{ flexDirection: "row" }}>
             <Icon
               name="add-circle-outline"
               size={30}
@@ -231,7 +252,7 @@ const Profile = () => {
               style={{ marginTop: -45 }}
               onPress={()=> Navigation.push('SearchUser')}
             />
-          </View>
+          </View> */}
         </View>
         <ScrollView horizontal>
           <View>
@@ -253,20 +274,41 @@ const Profile = () => {
             ></ImageBackground>
           </View>
         </ScrollView>
+        <View style={{flexDirection:'row',
+                    marginBottom:20,
+                    justifyContent:'space-evenly'}}>
+            <Button  
+                title='Message'
+                type="solid"
+                buttonStyle={{width:(width/2.5),
+                height:(width/10),
+                backgroundColor:'#1f1e1e'}}                           
+                >
+            </Button>
+            <Button  
+                title={buttonName}
+                type="solid"
+                buttonStyle={{width:(width/2.5),
+                height:(width/10),
+                backgroundColor:'#1f1e1e'}}    
+                onPress={manageFollowers}                       
+                >
+            </Button>
+          </View>
       </View>
       <View style={{ flex: 1.5 }}>
         <View
           style={{
             width: Dimensions.get("window").width - 30,
             height: 50,
-            backgroundColor: "silver",
+            backgroundColor: "#1e1e1e",
             marginLeft: 15,
             marginBottom: 15,
             justifyContent: "center",
             alignItems: "center",
           }}
         >
-          <Text style={{ color: "black", fontWeight: "900" }}>POSTS</Text>
+          <Text style={{ color: "silver", fontWeight: "900" }}>POSTS</Text>
         </View>
         <ScrollView>
           <View style={{ flexDirection: "row", flexWrap: "wrap", width:(width-23), marginLeft:11.5}}>
@@ -296,4 +338,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Profile;
+export default UserProfile;

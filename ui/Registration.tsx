@@ -49,6 +49,7 @@ const Registration = () => {
                     FirstName,
                     LastName,
                     Email,
+                    UserId : firebase.auth().currentUser?.uid,
                 })
             })
             .catch((error: any) => {
